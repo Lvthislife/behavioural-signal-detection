@@ -1,105 +1,154 @@
-# behavioural-signal-detection
-Detecting linguistic and behavioural risk signals in workplace incident reports using explainable hybrid NLP and linguistic feature engineering
+# workplace-nlp-risk-signals
+
+Detecting latent behavioural and psychological risk signals in workplace incident reports using persona-based synthetic data, TF-IDF and RoBERTa embeddings, and SHAP explainability.
+
+---
 
 ## Overview
-This project investigates whether the *way* workplace incidents are reported carries information beyond the incident itself. Standard WHS reporting systems capture what happened. This project asks whether the language used to describe what happened — and what was done about it — reveals something about the quality of organisational safety culture, reporting integrity, and corrective action effectiveness.
 
-The core hypothesis: linguistically degraded incident reports (passive constructions, hedging, emotional suppression, low specificity, copy-pasted corrective actions) are associated with poorer corrective action quality and higher incident severity, independent of incident type and structural metadata.
+This project investigates whether the *way* workplace incidents are reported carries information beyond the incident itself. Standard WHS reporting systems capture what happened. This project asks whether the language used to describe what happened — and what was done about it — reveals something about the reporter's psychological state, reporting effort, and the quality of corrective actions taken.
 
-This work was completed as a capstone project in a Graduate Certificate in Data Science and AI Programming and forms the basis for a planned extension into frontier model behavioural evaluation — specifically, whether similar linguistic signals appear in model outputs under conditions of authority pressure, conflicting incentives, or ambiguous constraints.
+The core hypothesis: linguistic patterns in incident reports (passive constructions, hedging, emotional suppression, vagueness) are associated with lower reporting effort, poorer corrective action quality, and lower psychological safety — independent of incident type and severity.
+
+The project operationalises this through a persona framework: five synthetic reporter archetypes with distinct behavioural and linguistic profiles, allowing controlled analysis of how reporting style varies across psychological and organisational conditions.
+
+This work was completed as part of a Graduate Certificate in Data Science and AI Programming and forms the basis for a planned extension into frontier model behavioural evaluation — specifically, whether similar linguistic signals emerge in model outputs under conditions of authority pressure, conflicting incentives, or ambiguous institutional constraints.
+
 ---
-## Research Questions
 
-1. Can linguistic features extracted from incident description and corrective action text predict incident severity (Low / Moderate / High)?
-2. Can the same features distinguish high-quality from low-quality corrective actions?
-3. Which linguistic features are most predictive, and what does that suggest about the relationship between language and safety culture?
+## Personas
+
+The dataset centres on five reporter personas, each representing a distinct safety culture archetype:
+
+| Persona | Profile |
+|---|---|
+| **Barry Thompson** | Minimiser — under-assesses severity, uses vague language, high model risk |
+| **Talia Navarro** | Anxious — tentative language, fear and avoidance signals, variable report depth |
+| **Gavin Leung** | Disengaged — emotionally distant, low effort, consistently poor action quality |
+| **Kavita Rao** | Conscientious — detailed, proactive reports, consistently high action quality |
+| **Mia Chen** | By-the-book — formal, templated language, reliable but sometimes low specificity |
+
+Each persona contributes 100 records to the dataset (500 total), with effort, psychological safety, and action quality labels calibrated to persona type.
+
 ---
+
 ## Dataset
 
-The dataset is synthetic, generated to replicate the statistical and linguistic characteristics of real WHS incident reports in operational energy sector environments (power generation, heavy industry). Real incident data was not used due to privacy constraints.
+`synthetic_whs_incidents_persona_dataset.xlsx` — 500 records, 10 fields:
 
-Synthetic generation was designed to preserve ecological validity:
+| Field | Description |
+|---|---|
+| `persona` | Reporter archetype |
+| `incident_description` | Free-text incident narrative |
+| `corrective_action` | Free-text corrective action taken |
+| `psych_safety` | Psychological safety level (low / mixed / medium / high) |
+| `effort` | Reporting effort (low / medium / high) |
+| `emotion` | Dominant emotional tone |
+| `action_quality` | Corrective action quality (good / poor) |
+| `incident_timestamp` | Date of incident |
+| `closed_date` | Date closed |
+| `incident_severity` | Incident severity level |
 
-- 400–500 records per generation run
-- 13 incident types drawn from operational energy sector categories (Slip/Trip/Fall, Electrical Safety, Process Safety Event, Chemical Exposure, Working at Height, Vehicle Incident, Environmental Spill, and others)
-- Two reporting style regimes: `high_trust` (factual, specific, active voice) and `low_safety` (passive, tentative, emotionally loaded)
-- Seven emotional tone categories: Neutral, Fear, Gratitude, Guilt, Blame, Concern, Frustration
-- Corrective action quality labels: Good / Poor
-- Linguistic flags injected at generation: passive voice, tentative language, emotional tone
+The dataset is synthetic, generated to preserve the statistical and linguistic characteristics of real WHS incident reports in operational environments. Real incident data was not used due to privacy constraints.
 
-Structured fields include: incident ID, timestamp, team, shift, location, incident type, severity, injury flag, reporting style, and generated linguistic metadata.
+---
+
+## Linguistic Library
+
+`01_Linguistic_Library_Construction.ipynb` builds the domain language foundation for the project:
+
+- Milton Model NLP language patterns (mind reading, nominalisations, presuppositions, modal operators, and others) — drawn from NLP linguistic analysis frameworks and operationalised as detection targets in report text
+- WHS terminology extracted from Safe Work Australia glossary sources
+- Two output dictionaries: `WHS_Terms` and `NLP_Language_Patterns`
+- Word cloud visualisation of domain vocabulary
+
+This notebook establishes the theoretical basis for what constitutes linguistically degraded or psychologically loaded incident report language.
 
 ---
 
 ## Pipeline
 
-The project runs across three scripts:
+### Notebook 1 — `01_WHS2.ipynb`: Data Load, Validation & Setup
+- Dataset load and string standardisation
+- Label encoding: effort (low/medium/high → 0/1/2), psych safety (low/mixed/medium/high → 0/1/2/3), action quality (poor/good → 0/1)
+- Train/test split preparation
+- Foundation for all downstream notebooks
 
-### `01_generate_synthetic_data.py`
-Generates the synthetic dataset with structured fields, templated incident descriptions, and injected linguistic features. Templates include passive and tentative variants calibrated to reporting style regime. Outputs `whs_incidents.csv`.
+### Notebook 2 — `02_WHS2.ipynb`: EDA & TF-IDF Classification
+- Sample text inspection and label distribution analysis
+- Violin plots and persona-level comparisons
+- TF-IDF vectorisation (unigrams, max 1,000 features) on corrective action text
+- Logistic Regression classification for `effort` and `action_quality`
+- Classification reports and confusion matrices
 
-### `02_preprocess_features.py`
-NLP preprocessing and feature engineering pipeline using spaCy (`en_core_web_sm`) and scikit-learn:
+### Notebook 3 — `03_WHS2.ipynb`: RoBERTa Embeddings & SHAP Explainability
+- Sentence embeddings via `sentence-transformers` (`all-MiniLM-L6-v2`, RoBERTa-based)
+- Logistic Regression classifiers for `effort`, `action_quality`, and `psych_safety`
+- SHAP explainability with summary plots for each classification target
+- Persona-level mean prediction probability analysis
+- Comparison of TF-IDF vs RoBERTa performance across targets
 
-- Text cleaning, tokenisation, stop word removal, lemmatisation
-- TF-IDF vectorisation with unigram/bigram representation (max 5,000 features)
-- Cosine similarity between incident description and corrective action (measures semantic alignment)
-- Copy-paste flag: detects repeated corrective action text across records
-- Action word count: raw word count of corrective action text
-- Specificity score: ratio of unique to total lemmas (proxy for vagueness)
-- Passive voice detection: spaCy dependency parse (`nsubjpass`, `auxpass`)
-
-Outputs `whs_incidents_processed.csv`.
-
-### `03_eda_train_evaluate_shap.py`
-Exploratory data analysis, model training, evaluation, and explainability:
-
-- Two classification targets: incident severity (multiclass) and corrective action quality (binary)
-- Baseline: Logistic Regression
-- Primary: Random Forest Classifier (sklearn Pipeline with OneHotEncoder, StandardScaler)
-- Evaluation metrics: Accuracy, weighted F1, ROC AUC (OvR weighted), confusion matrix
-- Explainability: SHAP TreeExplainer with summary bar plots, beeswarm plots, and waterfall plots for individual predictions
-- Trained models and encoders serialised via `joblib`
+### Notebook 4 — `04_WHS2.ipynb`: Final Comparison, Dashboards & Persona Storytelling
+- Model performance comparison: TF-IDF + Logistic vs RoBERTa + Logistic
+- Dashboard-style visual summaries (F1 scores by model and target)
+- Persona-level boxplots for effort and psychological safety distributions
+- Behavioural inference and storytelling by archetype
 
 ---
 
-## Features Used in Modelling
+## Model Performance Summary
 
-| Feature | Type | Source |
-|---|---|---|
-| `similarity_score` | Float | TF-IDF cosine similarity, desc vs action |
-| `copy_paste_flag` | Boolean | Duplicate detection on processed action text |
-| `action_word_count` | Integer | Raw word count, corrective action |
-| `specificity_score` | Float | Unique/total lemma ratio, processed action |
-| `spacy_passive_voice_flag` | Boolean | Dependency parse, corrective action |
-| `generated_passive_voice_flag` | Boolean | Injected at generation |
-| `generated_tentative_flag` | Boolean | Injected at generation |
-| `generated_emotional_tone` | Categorical | Injected at generation |
-| `incident_type` | Categorical | Structured field |
-| `team`, `shift`, `location` | Categorical | Structured fields |
-| `injury` | Boolean | Structured field |
+| Model | Action Quality F1 | Effort F1 | Psych Safety F1 |
+|---|---|---|---|
+| TF-IDF + Logistic Regression | 0.81 | 0.79 | 0.76 |
+| RoBERTa + Logistic Regression | 0.89 | 0.87 | 0.85 |
+
+RoBERTa embeddings outperform TF-IDF across all three classification targets, with the largest gain on psychological safety — the most latent and linguistically subtle of the three signals.
+
 ---
+
 ## Tech Stack
 
-- Python 3.x
-- spaCy (`en_core_web_sm`)
+- Python 3.12
+- `sentence-transformers` (`all-MiniLM-L6-v2`)
 - scikit-learn
 - SHAP
 - pandas, numpy, matplotlib, seaborn
-- joblib
+- NLTK
+- python-docx, wordcloud
+
 ---
+
+## Repository Structure
+
+```
+workplace-nlp-risk-signals/
+├── README.md
+├── requirements.txt
+├── 01_Linguistic_Library_Construction.ipynb
+├── 01_WHS2.ipynb
+├── 02_WHS2.ipynb
+├── 03_WHS2.ipynb
+├── 04_WHS2.ipynb
+└── data/
+    └── synthetic_whs_incidents_persona_dataset.xlsx
+```
+
+---
+
 ## Limitations and Future Directions
 
-The synthetic dataset, while ecologically calibrated, does not carry the full distributional complexity of real incident corpora. Linguistic feature injection was rule-based rather than learned, which bounds the generalisability of findings.
+The synthetic dataset, while persona-calibrated and linguistically grounded, does not carry the full distributional complexity of real incident corpora. The persona labels are constructed rather than observed, which bounds the generalisability of findings to real reporting populations.
 
 Planned extensions:
 
 - Apply the feature engineering pipeline to real incident report corpora (pending ethics approval and data access)
-- Extend the linguistic signal detection framework to frontier language model outputs — specifically, testing whether passive constructions, hedging, specificity loss, and tonal suppression emerge when models are evaluated under conditions analogous to authority pressure, conflicting incentives, or ambiguous institutional constraints
-- Explore transformer-based embeddings (BERT, domain-adapted variants) as an alternative to TF-IDF for similarity scoring
+- Extend the linguistic signal detection framework to frontier language model outputs — testing whether passive constructions, hedging, specificity loss, and tonal suppression emerge when models operate under conditions analogous to authority pressure, conflicting incentives, or ambiguous institutional constraints
+- Develop persona-equivalent archetypes for model behavioural profiling under systematic evaluation conditions
+
 ---
 
 ## Project Context
 
-This project was completed as part of a Graduate Certificate in Data Science and AI Programming at the University of Technology Sydney. It joins NLP, organisational behaviour, and safety science, and is intended as a foundation for research into behavioural signal detection in both human-generated and model-generated text.
+Completed as part of a Graduate Certificate in Data Science and AI Programming at the University of Technology Sydney. The project sits at the intersection of NLP, organisational behaviour, and safety science, and is intended as a foundation for research into behavioural signal detection in both human-generated and model-generated text.
 
