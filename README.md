@@ -55,14 +55,28 @@ The dataset is synthetic, generated to preserve the statistical and linguistic c
 
 ## Linguistic Library
 
-`01_Linguistic_Library_Construction.ipynb` builds the domain language foundation for the project:
+`01_Linguistic_Library_Construction.ipynb` builds the domain language foundation for the project across two components:
 
-- Milton Model NLP language patterns (mind reading, nominalisations, presuppositions, modal operators, and others) — drawn from NLP linguistic analysis frameworks and operationalised as detection targets in report text
-- WHS terminology extracted from Safe Work Australia glossary sources
-- Two output dictionaries: `WHS_Terms` and `NLP_Language_Patterns`
-- Word cloud visualisation of domain vocabulary
+**Milton Model patterns** — ten NLP language patterns associated with psychologically loaded or evasive language, each defined with description, example, and regex detection hint:
 
-This notebook establishes the theoretical basis for what constitutes linguistically degraded or psychologically loaded incident report language.
+| Pattern | Signal |
+|---|---|
+| Mind Reading | Assumed knowledge of others' thoughts |
+| Lost Performative | Value judgments without attribution |
+| Cause and Effect | Implied causation without evidence |
+| Complex Equivalence | Unrelated things treated as equivalent |
+| Presupposition | Embedded assumptions |
+| Universal Quantifiers | Extreme generalised language (always, never) |
+| Modal Operators | Necessity/impossibility framing (must, can't) |
+| Nominalisation | Process converted to static noun |
+| Unspecified Verb | Vague action language (handled, addressed, resolved) |
+| Unspecified Referential Index | Missing subject (they said, people told) |
+
+Exported to `milton_model_patterns.csv` for use in rule-based text validation.
+
+**WHS terminology** — extracted from the Safe Work Australia Model Code of Practice (How to Manage Work Health and Safety Risks), preprocessed with NLTK lemmatisation and custom stopword filtering, and visualised as a word cloud to identify domain-specific vocabulary relevant to incident reporting.
+
+Together these components establish the theoretical and lexical basis for what constitutes linguistically degraded or psychologically loaded incident report language.
 
 ---
 
