@@ -1,0 +1,21 @@
+# Core data processing
+pandas>=1.5.0
+numpy>=1.23.0
+
+# NLP
+spacy>=3.5.0
+# After installing spaCy, download the language model:
+# python -m spacy download en_core_web_sm
+
+# Machine learning
+scikit-learn>=1.2.0
+
+# Explainability
+shap>=0.42.0
+
+# Visualisation
+matplotlib>=3.6.0
+seaborn>=0.12.0
+
+# Model serialisation
+joblib>=1.2.0
