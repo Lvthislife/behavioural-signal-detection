@@ -1,18 +1,70 @@
-# workplace-nlp-risk-signals
+# behavioural-signal-detection
 
 Detecting latent behavioural and psychological risk signals in workplace incident reports using persona-based synthetic data, TF-IDF and RoBERTa embeddings, and SHAP explainability.
 
 ---
 
-## Overview
+## Problem Statement
 
-This project investigates whether the *way* workplace incidents are reported carries information beyond the incident itself. Standard WHS reporting systems capture what happened. This project asks whether the language used to describe what happened — and what was done about it — reveals something about the reporter's psychological state, reporting effort, and the quality of corrective actions taken.
+In critical infrastructure organisations, workplace health and safety (WHS) reporting is a vital control for managing risk, maintaining regulatory compliance, and protecting operational continuity. While incident reports are routinely logged, the current WHS process relies heavily on manual review, with limited analytical support to assess either the severity of incidents early or the quality of the recorded corrective actions.
 
-The core hypothesis: linguistic patterns in incident reports (passive constructions, hedging, emotional suppression, vagueness) are associated with lower reporting effort, poorer corrective action quality, and lower psychological safety — independent of incident type and severity.
+Corrective actions are often treated as administrative requirements — completed post-incident using free-text fields that may be vague, generic, or copied from prior responses. These actions are not consistently assessed for their alignment with the incident cause or their effectiveness in improving controls. As a result, the same types of incidents may recur despite being closed out, leading to preventable risk, audit findings, or regulatory scrutiny.
 
-The project operationalises this through a persona framework: five synthetic reporter archetypes with distinct behavioural and linguistic profiles, allowing controlled analysis of how reporting style varies across psychological and organisational conditions.
+This project applies machine learning and NLP to:
+- Predict the likely severity of WHS incidents from structured and unstructured report data
+- Assess the alignment and quality of corrective actions by analysing their relationship to the incident narrative
+- Identify patterns of low-value responses (repeated or copy-paste actions) that may indicate ineffective governance or control theatre
 
-This work was completed as part of a Graduate Certificate in Data Science and AI Programming and forms the basis for a planned extension into frontier model behavioural evaluation — specifically, whether similar linguistic signals emerge in model outputs under conditions of authority pressure, conflicting incentives, or ambiguous institutional constraints.
+---
+
+## Research Questions
+
+**Business question:** How can data-driven methods reduce the cost and effort of WHS incident oversight, by accurately predicting severity and verifying whether corrective actions genuinely improve control effectiveness?
+
+**Data question:** What features — structured and unstructured — can accurately predict incident severity and assess whether corrective actions are appropriate, original, and aligned with the reported incident?
+
+Specific questions:
+- Which structured factors (shift, team, incident type) are most associated with high-severity outcomes?
+- Can NLP detect copy-paste patterns or vague corrective actions?
+- What is the similarity between incident descriptions and action text, and does this reflect alignment?
+- Can we build a scoring system that flags poor action quality or misalignment?
+
+---
+
+## Hypothesis
+
+Can ML/NLP models be used to:
+- Evaluate the alignment between incident descriptions and corrective actions
+- Flag incomplete or poor-quality responses automatically
+- Detect systemic issues across sites, teams, or processes
+- Support management and governance layers with explainable, real-time advice — not just dashboards
+
+This project tests the hypothesis that machine learning can create a governance intelligence layer within operational WHS risk reporting — making safety reporting not just administrative, but strategic and actionable.
+
+---
+
+## Methodology
+
+| Technique | Purpose | Tools |
+|---|---|---|
+| Semantic Similarity | Match incident vs. action meaning | Sentence Transformers, TF-IDF baseline |
+| Classification | Predict if corrective action is good or poor | Logistic Regression, Random Forest |
+| Explainable AI | Show why the model flagged an action | SHAP |
+| Persona analysis | Profile behavioural risk by reporter archetype | Custom synthetic dataset |
+
+### TF-IDF vs RoBERTa
+
+| Feature | TF-IDF | RoBERTa (all-MiniLM-L6-v2) |
+|---|---|---|
+| Method | Counts word frequency | Learns deep sentence meaning |
+| Understands synonyms | No | Yes |
+| Understands context | No | Yes |
+| "Slipped" vs "fall" similarity | Low | High |
+| "Chemical spill" vs "toxic leak" | Low | High |
+| Compute cost | Fast, low memory | Higher, GPU-beneficial |
+| Business explanation | "How many words matched" | "Are the ideas actually the same" |
+
+RoBERTa was selected as the primary embedding model over BERT-base due to memory constraints on consumer hardware (8GB RAM). `all-MiniLM-L6-v2` via `sentence-transformers` provides strong semantic performance within these constraints.
 
 ---
 
@@ -74,9 +126,7 @@ The dataset is synthetic, generated to preserve the statistical and linguistic c
 
 Exported to `milton_model_patterns.csv` for use in rule-based text validation.
 
-**WHS terminology** — extracted from the Safe Work Australia Model Code of Practice (How to Manage Work Health and Safety Risks), preprocessed with NLTK lemmatisation and custom stopword filtering, and visualised as a word cloud to identify domain-specific vocabulary relevant to incident reporting.
-
-Together these components establish the theoretical and lexical basis for what constitutes linguistically degraded or psychologically loaded incident report language.
+**WHS terminology** — extracted from the Safe Work Australia Model Code of Practice, preprocessed with NLTK lemmatisation and custom stopword filtering, and visualised as a word cloud to identify domain-specific vocabulary relevant to incident reporting.
 
 ---
 
@@ -86,27 +136,24 @@ Together these components establish the theoretical and lexical basis for what c
 - Dataset load and string standardisation
 - Label encoding: effort (low/medium/high → 0/1/2), psych safety (low/mixed/medium/high → 0/1/2/3), action quality (poor/good → 0/1)
 - Train/test split preparation
-- Foundation for all downstream notebooks
 
 ### Notebook 2 — `02_WHS2.ipynb`: EDA & TF-IDF Classification
-- Sample text inspection and label distribution analysis
-- Violin plots and persona-level comparisons
+- Label distribution analysis and persona-level comparisons
 - TF-IDF vectorisation (unigrams, max 1,000 features) on corrective action text
 - Logistic Regression classification for `effort` and `action_quality`
 - Classification reports and confusion matrices
 
 ### Notebook 3 — `03_WHS2.ipynb`: RoBERTa Embeddings & SHAP Explainability
-- Sentence embeddings via `sentence-transformers` (`all-MiniLM-L6-v2`, RoBERTa-based)
+- Sentence embeddings via `sentence-transformers` (`all-MiniLM-L6-v2`)
 - Logistic Regression classifiers for `effort`, `action_quality`, and `psych_safety`
 - SHAP explainability with summary plots for each classification target
 - Persona-level mean prediction probability analysis
-- Comparison of TF-IDF vs RoBERTa performance across targets
 
 ### Notebook 4 — `04_WHS2.ipynb`: Final Comparison, Dashboards & Persona Storytelling
-- Model performance comparison: TF-IDF + Logistic vs RoBERTa + Logistic
-- Dashboard-style visual summaries (F1 scores by model and target)
+- Model performance comparison: TF-IDF vs RoBERTa
+- Dashboard-style visual summaries
 - Persona-level boxplots for effort and psychological safety distributions
-- Behavioural inference and storytelling by archetype
+- Behavioural inference by archetype
 
 ---
 
@@ -117,7 +164,7 @@ Together these components establish the theoretical and lexical basis for what c
 | TF-IDF + Logistic Regression | 0.81 | 0.79 | 0.76 |
 | RoBERTa + Logistic Regression | 0.89 | 0.87 | 0.85 |
 
-RoBERTa embeddings outperform TF-IDF across all three classification targets, with the largest gain on psychological safety — the most latent and linguistically subtle of the three signals.
+RoBERTa outperforms TF-IDF across all three targets, with the largest gain on psychological safety — the most latent and linguistically subtle of the three signals.
 
 ---
 
@@ -128,15 +175,14 @@ RoBERTa embeddings outperform TF-IDF across all three classification targets, wi
 - scikit-learn
 - SHAP
 - pandas, numpy, matplotlib, seaborn
-- NLTK
-- python-docx, wordcloud
+- NLTK, python-docx, wordcloud
 
 ---
 
 ## Repository Structure
 
 ```
-workplace-nlp-risk-signals/
+behavioural-signal-detection/
 ├── README.md
 ├── requirements.txt
 ├── 01_Linguistic_Library_Construction.ipynb
@@ -145,18 +191,19 @@ workplace-nlp-risk-signals/
 ├── 03_WHS2.ipynb
 ├── 04_WHS2.ipynb
 └── data/
-    └── synthetic_whs_incidents_persona_dataset.xlsx
+    ├── synthetic_whs_incidents_persona_dataset.xlsx
+    ├── milton_model_patterns.csv
+    └── whs_glossary_terms.csv
 ```
 
 ---
 
 ## Limitations and Future Directions
 
-The synthetic dataset, while persona-calibrated and linguistically grounded, does not carry the full distributional complexity of real incident corpora. The persona labels are constructed rather than observed, which bounds the generalisability of findings to real reporting populations.
+The synthetic dataset, while persona-calibrated and linguistically grounded, does not carry the full distributional complexity of real incident corpora. Persona labels are constructed rather than observed, which bounds generalisability to real reporting populations.
 
 Planned extensions:
-
-- Apply the feature engineering pipeline to real incident report corpora (pending ethics approval and data access)
+- Apply the pipeline to real incident report corpora (pending ethics approval and data access)
 - Extend the linguistic signal detection framework to frontier language model outputs — testing whether passive constructions, hedging, specificity loss, and tonal suppression emerge when models operate under conditions analogous to authority pressure, conflicting incentives, or ambiguous institutional constraints
 - Develop persona-equivalent archetypes for model behavioural profiling under systematic evaluation conditions
 
